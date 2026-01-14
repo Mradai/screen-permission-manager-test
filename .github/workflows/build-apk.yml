@@ -1,30 +1,85 @@
 name: Build Android APK
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+        - debug
+        - release
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.16.0'
-        cache: true
-    
-    - name: Install dependencies
-      run: flutter pub get
-    
-    - name: Build APK
-      run: flutter build apk --debug
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-debug
-        path: build/app/outputs/flutter-apk/app-debug.apk
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🛠️ Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: 📦 Install dependencies
+        run: flutter pub get
+      
+      - name: 🧪 Run tests
+        run: flutter test
+      
+      - name: 🔨 Build APK
+        run: |
+          if [ "${{ github.event.inputs.build_type }}" == "release" ]; then
+            flutter build apk --release
+            mv build/app/outputs/flutter-apk/app-release.apk app-release.apk
+          else
+            flutter build apk --debug
+            mv build/app/outputs/flutter-apk/app-debug.apk app-debug.apk
+          fi
+      
+      - name: 📤 Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: "*.apk"
+          retention-days: 30
+      
+      - name: 🎯 Create Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.apk"
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          body: |
+            # 🎉 屏幕权限管理测试APP
+            
+            ## 📱 应用信息
+            - **版本**: v1.0.${{ github.run_number }}
+            - **构建时间**: ${{ github.event.head_commit.timestamp }}
+            - **提交**: ${{ github.sha }}
+            
+            ## 📦 下载说明
+            下载下方的APK文件，传输到Android设备安装即可
+            
+            ## 🔍 测试要点
+            1. 打开APP，确认蓝色主题界面
+            2. 点击右下角浮动按钮，测试屏幕状态切换
+            3. 开启自动管理，体验智能权限控制
+            4. 查看实时统计和操作日志
+            
+            ## ⚡ 快速开始
+            详细测试指南请查看项目中的 TEST_GUIDE.md
+            
+            ---
+            *构建于 ${{ github.event.repository.updated_at }}*
