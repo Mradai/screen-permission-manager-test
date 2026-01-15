@@ -1,52 +1,16 @@
-name: Build Android APK
-on:
-  push:
-    branches: [ master, main ]
-  workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build type'
-        required: true
-        default: 'debug'
-        type: choice
-        options:
-        - debug
-        - release
+name: Build APK
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
+    - uses: actions/checkout@v4
+    - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.16.0'
-        channel: 'stable'
-        
-    - name: Get Flutter dependencies
-      run: flutter pub get
-      
-    - name: Run Flutter tests (可选)
-      run: flutter test || echo "测试失败，但继续构建"
-      
-    - name: Build APK (Debug)
-      if: ${{ github.event.inputs.build_type == 'debug' || github.event_name != 'workflow_dispatch' }}
-      run: flutter build apk --debug --no-tree-shake-icons
-      
-    - name: Build APK (Release)
-      if: ${{ github.event.inputs.build_type == 'release' }}
-      run: flutter build apk --release --no-tree-shake-icons
-      
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
+    - run: flutter pub get
+    - run: flutter build apk --debug --no-tree-shake-icons
+    - uses: actions/upload-artifact@v4
       with:
-        name: app-${{ github.event.inputs.build_type || 'debug' }}.apk
-        path: build/app/outputs/flutter-apk/app-${{ github.event.inputs.build_type || 'debug' }}.apk
+        name: app-debug.apk
+        path: build/app/outputs/flutter-apk/app-debug.apk

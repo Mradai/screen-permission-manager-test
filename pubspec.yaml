@@ -1,12 +1,11 @@
-name: screen_permission_test
-description: 屏幕权限管理测试APP
+name: test_app
+description: A new Flutter project.
 version: 1.0.0+1
 environment:
   sdk: '>=3.0.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
